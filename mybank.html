@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>BANK OF AMERICA</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="manifest" href="manifest.json">
+  <style>
+    :root{ --red:#b71c1c; --white:#fff; --muted:#666; --shadow:0 8px 30px rgba(0,0,0,0.08); }
+    *{box-sizing:border-box}
+    body{ margin:0; font-family: Arial, Helvetica, sans-serif; background:var(--white); color:#222; }
+    .wrap{ max-width:980px; margin:28px auto; padding:18px; }
+    .topbar{ display:flex; justify-content:space-between; align-items:center; gap:12px; }
+    .brand { display:flex; gap:12px; align-items:center; }
+    .logoRow { width:72px; height:72px; border-radius:12px; background:linear-gradient(135deg,#ff5252,#8b0000); color:white; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:22px; box-shadow:var(--shadow); }
+    .title { font-size:20px; font-weight:700; }
+    .sub { color:var(--muted); font-size:13px; }
+    .card-grid { display:grid; grid-template-columns:1fr 380px; gap:18px; margin-top:16px; }
+    .card { background:var(--white); padding:14px; border-radius:12px; box-shadow:var(--shadow); }
+    .acct-amt{ font-size:26px; font-weight:700; margin-top:6px;}
+    button{ background:var(--red); color:white; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:600; }
+    button.ghost{ background:transparent; border:1px solid #ddd; color:#222; }
+    input[type=number], input[type=text], input[type=password], select { padding:8px; border-radius:8px; border:1px solid #ddd; width:100%; }
+    .muted{ color:var(--muted); font-size:13px; }
+    .txns { max-height:360px; overflow:auto; margin-top:8px; }
+    .txn { display:flex; justify-content:space-between; gap:10px; padding:10px 8px; border-bottom:1px solid #f2f2f2; align-items:center; }
+    .txn .d { font-family: "Courier New", monospace; color:#444; font-size:13px; }
+    .txn .r { font-weight:700; }
+    .controls { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+    .small { font-size:12px; color:var(--muted); }
+    .center { text-align:center; }
+    .hidden{ display:none; }
+    .loginBox{ max-width:400px; margin:60px auto; padding:18px; border-radius:12px; box-shadow:var(--shadow); background:var(--white); }
+    .footer{ margin-top:18px; text-align:center; color:var(--muted); font-size:13px; }
+    .top-buttons{ display:flex; gap:8px; align-items:center; }
+    .settings{ font-size:13px; color:var(--muted); margin-top:8px; }
+    .inline { display:inline-block; vertical-align:middle; }
+    .editBtn { background:#444; padding:6px 8px; border-radius:8px; color:white; font-size:12px; }
+    .danger { background:#c62828; }
+    .row { display:flex; gap:8px; align-items:center; }
+    @media (max-width:900px){ .card-grid{ grid-template-columns:1fr; } .logoRow { width:56px; height:56px; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+
+    <!-- LOGIN UI -->
+    <div id="loginScreen" class="loginBox hidden">
+      <div class="center">
+        <div id="logoPreview" class="logoRow">BOA</div>
+        <div style="margin-top:10px">
+          <div class="title">BANK OF AMERICA</div>
+          <div class="sub">Log In to Online Banking</div>
+        </div>
+      </div>
+
+      <div style="margin-top:12px;">
+        <label class="small">Username</label>
+        <input id="loginUser" type="text" placeholder="username" />
+      </div>
+      <div style="margin-top:8px;">
+        <label class="small">Password</label>
+        <input id="loginPass" type="password" placeholder="password" />
+      </div>
+
+      <div style="margin-top:12px; display:flex; gap:8px;">
+        <button onclick="doLogin()">Sign in</button>
+        <button class="ghost" onclick="showRegister()">Create / Reset Account</button>
+      </div>
+
+      <div class="small settings" style="margin-top:12px;">
+        You are safe with us
+      </div>
+    </div>
+
+    <!-- MAIN UI -->
+    <div id="mainUI" class="hidden">
+      <div class="topbar">
+        <div class="brand">
+          <div id="logoHeader" class="logoRow">DW</div>
+          <div>
+            <div class="title" id="ownerName">Deborah Welbec</div>
+            <div class="sub" id="acctSub">Checking • Savings • Routing: 052975264</div>
+          </div>
+        </div>
+
+        <div class="top-buttons">
+          <div class="small">Logged in as <strong id="userLabel">deborah</strong></div>
+          <button onclick="openSettings()">Settings</button>
+        </div>
+      </div>
+
+      <div class="card-grid">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <div class="small">Checking Account</div>
+              <div class="acct-amt" id="checkingAmt">$0.00</div>
+              <div class="small">Last updated: <span id="lastUpdated">—</span></div>
+            </div>
+            <div style="text-align:right;">
+              <div class="small muted">Ac #: <strong id="acctNumber">61525478</strong></div>
+              <div style="margin-top:8px;">
+                <button onclick="quickDeposit('checking',500)">+ $500</button>
+                <button class="ghost" onclick="quickWithdraw('checking',200)">- $200</button>
+              </div>
+            </div>
+          </div>
+
+          <hr style="margin:12px 0;border:none;border-top:1px solid #f2f2f2" />
+
+          <div style="font-weight:700">Manage Transactions</div>
+          <div style="margin-top:8px;">
+            <div class="row">
+              <select id="txAccount" style="width:160px;">
+                <option value="checking">Checking</option>
+                <option value="savings">Savings</option>
+              </select>
+              <input id="txAmount" type="number" placeholder="Amount" min="0.01" step="0.01" />
+              <input id="txDesc" type="text" placeholder="Description (e.g. Grocery payment)" />
+              <button onclick="addTransaction()">Add</button>
+            </div>
+            <div class="small muted" style="margin-top:6px;">You can add a transaction; use the edit button in the list to modify or delete it.</div>
+          </div>
+
+          <div style="margin-top:12px;">
+            <div style="font-weight:700; margin-bottom:6px;">Recent Transactions</div>
+            <div class="txns" id="txnList"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <div class="small">Savings Account</div>
+              <div class="acct-amt" id="savingsAmt">$0.00</div>
+            </div>
+            <div style="text-align:right;">
+              <div class="small muted">Routing: <strong>052975264</strong></div>
+              <div style="margin-top:8px;">
+                <button onclick="quickDeposit('savings',10000)">+ $10,000</button>
+                <button class="ghost" onclick="quickWithdraw('savings',5000)">- $5,000</button>
+              </div>
+            </div>
+          </div>
+
+          <hr style="margin:12px 0;border:none;border-top:1px solid #f2f2f2" />
+          <div>
+            <div style="font-weight:700">Account Details</div>
+            <div style="margin-top:8px;" class="small">
+              <div>Account Name: <strong>Deborah Welbec</strong></div>
+              <div>Routing Number: <strong>052975264</strong></div>
+              <div>Account Number: <strong id="acctNumShown">61525478</strong></div>
+            </div>
+
+            <div style="margin-top:12px;">
+              <div style="font-weight:700">Bank Logo</div>
+              <div class="small muted" style="margin-top:6px;">Upload a PNG/JPG and it will appear on the page (saved in your browser).</div>
+              <div style="margin-top:8px;" class="row">
+                <input id="logoFile" type="file" accept="image/*" />
+                <button class="ghost" onclick="clearLogo()">Clear</button>
+              </div>
+            </div>
+
+            <div style="margin-top:12px;">
+              <div style="font-weight:700">Quick actions</div>
+              <div style="margin-top:8px;" class="row">
+                <button onclick="exportCSV()">Export CSV</button>
+                <button class="ghost" onclick="resetDemo()">Reset Demo</button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="footer">This demo stores data locally in your browser only. Not a real bank.</div>
+    </div>
+
+    <!-- SETTINGS / REGISTER MODAL (simple in-page UI) -->
+    <div id="settingsBox" class="card hidden" style="margin-top:18px; max-width:760px; margin-left:auto; margin-right:auto;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-weight:700">Settings & Account</div>
+          <div class="small muted">Change password, view user, or log out</div>
+        </div>
+        <div>
+          <button class="ghost" onclick="closeSettings()">Close</button>
+        </div>
+      </div>
+
+      <div style="margin-top:12px;">
+        <div class="small">Current user: <strong id="settingsUser">—</strong></div>
+        <div style="margin-top:8px;">
+          <label class="small">Change password</label>
+          <div style="display:flex;gap:8px;margin-top:6px;">
+            <input id="newPass" type="password" placeholder="New password" />
+            <input id="newPassConfirm" type="password" placeholder="Confirm" />
+            <button onclick="changePassword()">Change</button>
+          </div>
+        </div>
+
+        <div style="margin-top:12px;">
+          <div class="small">Create or reset demo account</div>
+          <div style="display:flex;gap:8px;margin-top:6px;">
+            <input id="regUser" type="text" placeholder="username" />
+            <input id="regPass" type="password" placeholder="password" />
+            <button class="ghost" onclick="registerAccount()">Create / Reset</button>
+          </div>
+        </div>
+
+        <div style="margin-top:12px;">
+          <div class="small">Danger zone</div>
+          <div style="display:flex;gap:8px;margin-top:6px;">
+            <button class="danger" onclick="clearAll()">Clear all demo data</button>
+            <button class="ghost" onclick="logout()">Log out</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    /* ---------------------------
+       Storage keys & default demo
+       --------------------------- */
+    const STORAGE_KEY = "deborah_demo_bank_auth_v2";
+    const STORAGE_DATA = "deborah_demo_bank_data_v2";
+
+    const defaultUser = { username: "0552472929", password: "@Excel321" }; // demo credentials
+    const demoData = {
+      checking: { balance: 95000.00 },
+      savings: { balance: 8000000.00 },
+      transactions: [
+        // newest first (realistic-looking)
+        { id: genId(), date: "2025-11-09T14:12:00", desc: "ATM deposit $2,000.00 to checking", account:"checking" },
+        { id: genId(), date: "2025-11-07T09:05:00", desc: "Direct deposit paycheck $3,200.00 to checking", account:"checking" },
+        { id: genId(), date: "2025-11-02T16:40:00", desc: "Online transfer $5,000.00 from checking → savings", account:"checking" },
+        { id: genId(), date: "2025-10-28T11:22:00", desc: "Grocery store card payment $156.23 (checking)", account:"checking" },
+        { id: genId(), date: "2025-10-21T19:35:00", desc: "Bill pay — Electric $128.90 (checking)", account:"checking" },
+        { id: genId(), date: "2025-09-30T08:12:00", desc: "Interest posted $4,800.00 (savings)", account:"savings" },
+        { id: genId(), date: "2025-09-15T14:00:00", desc: "Online purchase $2,499.00 (checking)", account:"checking" },
+        { id: genId(), date: "2025-08-10T10:25:00", desc: "Wire transfer incoming $250,000.00 to savings", account:"savings" }
+      ],
+      lastUpdated: new Date().toISOString(),
+      logoDataUrl: null
+    };
+
+    /* ---------------------------
+       Authentication (simple)
+       --------------------------- */
+    let auth = loadJson(STORAGE_KEY) || defaultUser;
+    let data = loadJson(STORAGE_DATA) || demoData;
+    let currentUser = null;
+
+    // Safe recover broken storage
+    if (!auth || typeof auth !== "object" || !auth.username) {
+      auth = defaultUser;
+      saveJson(STORAGE_KEY, auth);
+    }
+    if (!data || typeof data !== "object" || !data.checking) {
+      data = demoData;
+      saveJson(STORAGE_DATA, data);
+    }
+
+    // Elements
+    const loginScreen = document.getElementById("loginScreen");
+    const mainUI = document.getElementById("mainUI");
+    const settingsBox = document.getElementById("settingsBox");
+    const logoHeader = document.getElementById("logoHeader");
+    const logoPreview = document.getElementById("logoPreview");
+    const userLabel = document.getElementById("userLabel");
+
+    // init UI
+    function showLogin(){
+      loginScreen.classList.remove("hidden");
+      mainUI.classList.add("hidden");
+      settingsBox.classList.add("hidden");
+      // show stored logo on login if any
+      if (data.logoDataUrl) logoPreview.style.backgroundImage = `url(${data.logoDataUrl})`, logoPreview.textContent='';
+      else { logoPreview.style.backgroundImage=''; logoPreview.textContent='DW'; }
+    }
+
+    function showMain(){
+      loginScreen.classList.add("hidden");
+      mainUI.classList.remove("hidden");
+      settingsBox.classList.add("hidden");
+      userLabel.textContent = currentUser || auth.username;
+      document.getElementById("settingsUser").textContent = currentUser || auth.username;
+      // logo
+      if (data.logoDataUrl){
+        logoHeader.style.backgroundImage = `url(${data.logoDataUrl})`;
+        logoHeader.style.backgroundSize = "cover";
+        logoHeader.textContent = '';
+        logoPreview.style.backgroundImage = `url(${data.logoDataUrl})`;
+      } else {
+        logoHeader.style.backgroundImage = '';
+        logoHeader.textContent = 'DW';
+      }
+      render();
+    }
+
+    // Initial: show login
+    showLogin();
+
+    // Login action
+    function doLogin(){
+      const u = (document.getElementById("loginUser").value || "").trim();
+      const p = (document.getElementById("loginPass").value || "").trim();
+      const us = u || auth.username;
+      const ps = p || auth.password;
+      if (us === auth.username && ps === auth.password){
+        currentUser = us;
+        showMain();
+      } else {
+        alert("Invalid username or password.");
+      }
+    }
+
+    // Register or reset account
+    function showRegister(){
+      const r = confirm("Create/reset demo credentials to default (username: deborah, password: deborah123)? OK to reset, Cancel to open settings.");
+      if (r){
+        auth = { username: defaultUser.username, password: defaultUser.password };
+        saveJson(STORAGE_KEY, auth);
+        alert("Credentials reset to demo defaults. Use username: deborah and password: deborah123");
+      } else {
+        openSettings();
+      }
+    }
+
+    function registerAccount(){
+      const u = (document.getElementById("regUser").value || "").trim();
+      const p = (document.getElementById("regPass").value || "").trim();
+      if (!u || !p){ alert("Enter username and password to create."); return; }
+      auth = { username: u, password: p };
+      saveJson(STORAGE_KEY, auth);
+      alert("Created account for " + u + ". Please sign in with the new credentials.");
+    }
+
+    function logout(){
+      currentUser = null;
+      showLogin();
+    }
+
+    function changePassword(){
+      const a = (document.getElementById("newPass").value || "");
+      const b = (document.getElementById("newPassConfirm").value || "");
+      if (!a || !b){ alert("Enter the new password twice."); return; }
+      if (a !== b){ alert("Passwords do not match."); return; }
+      auth.password = a;
+      saveJson(STORAGE_KEY, auth);
+      alert("Password changed. Use the new password next time.");
+    }
+
+    function openSettings(){
+      settingsBox.classList.remove("hidden");
+      settingsBox.scrollIntoView({behavior:'smooth'});
+    }
+    function closeSettings(){
+      settingsBox.classList.add("hidden");
+    }
+
+    /* ---------------------------
+       Render UI & transactions
+       --------------------------- */
+    function formatUSD(n){ return Number(n).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); }
+    function render(){
+      document.getElementById("checkingAmt").textContent = "$" + formatUSD(data.checking.balance);
+      document.getElementById("savingsAmt").textContent = "$" + formatUSD(data.savings.balance);
+      document.getElementById("lastUpdated").textContent = new Date(data.lastUpdated || Date.now()).toLocaleString();
+      document.getElementById("acctNumShown").textContent = (data.hideAcct ? "****" + String(61525478).slice(-4) : "61525478");
+      renderTxns();
+    }
+
+    function renderTxns(){
+      const c = document.getElementById("txnList");
+      c.innerHTML = "";
+      if (!Array.isArray(data.transactions) || data.transactions.length===0){
+        c.innerHTML = '<div class="small muted">No transactions yet.</div>';
+        return;
+      }
+      data.transactions.forEach(tx=>{
+        const el = document.createElement("div"); el.className="txn";
+        const left = document.createElement("div"); left.className="d"; left.textContent = (new Date(tx.date)).toLocaleString() + " — " + tx.desc;
+        const right = document.createElement("div"); right.className="r";
+        // try extract amount
+        const m = (tx.desc || "").match(/\$([0-9,]+\.[0-9]{2}|[0-9,]+)/);
+        right.textContent = m ? m[0] : "";
+        const controls = document.createElement("div");
+        controls.style.display = "flex"; controls.style.gap = "6px";
+        const edit = document.createElement("button"); edit.className="editBtn"; edit.textContent = "Edit"; edit.onclick = ()=>editTx(tx.id);
+        const del = document.createElement("button"); del.className="editBtn"; del.style.background="#c62828"; del.textContent="Delete"; del.onclick = ()=>deleteTx(tx.id);
+        controls.appendChild(edit); controls.appendChild(del);
+        el.appendChild(left);
+        el.appendChild(right);
+        el.appendChild(controls);
+        c.appendChild(el);
+      });
+    }
+
+    /* ---------------------------
+       Transactions: add / edit / delete
+       --------------------------- */
+    function addTransaction(){
+      const account = document.getElementById("txAccount").value;
+      const amt = parseFloat(document.getElementById("txAmount").value);
+      const descRaw = (document.getElementById("txDesc").value || "").trim();
+      if (!descRaw || isNaN(amt) || amt <= 0){ alert("Enter description and valid amount."); return; }
+      const desc = (descRaw.includes("$") ? descRaw : `${descRaw} $${formatUSD(amt)} (${account})`);
+      // apply to account balance
+      // if description looks like deposit (contains 'deposit' or 'incoming'), credit else debit
+      const lower = desc.toLowerCase();
+      const credit = lower.includes("deposit") || lower.includes("incoming") || lower.includes("credit");
+      if (credit) data[account].balance = Number(data[account].balance) + amt;
+      else data[account].balance = Number(data[account].balance) - amt;
+      const tx = { id: genId(), date: new Date().toISOString(), desc: desc, account };
+      data.transactions.unshift(tx);
+      saveData();
+      // clear inputs
+      document.getElementById("txAmount").value = "";
+      document.getElementById("txDesc").value = "";
+      alert("Transaction added.");
+    }
+
+    function editTx(id){
+      const tx = data.transactions.find(t=>t.id===id);
+      if (!tx) return alert("Tx not found.");
+      const newDesc = prompt("Edit description:", tx.desc);
+      if (newDesc === null) return;
+      tx.desc = newDesc;
+      saveData();
+    }
+
+    function deleteTx(id){
+      if (!confirm("Delete this transaction? This will not adjust balances automatically.")) return;
+      data.transactions = data.transactions.filter(t=>t.id!==id);
+      saveData();
+    }
+
+    /* ---------------------------
+       Quick deposit/withdraw
+       --------------------------- */
+    function quickDeposit(acc, amt){
+      data[acc].balance = Number(data[acc].balance) + Number(amt);
+      data.transactions.unshift({ id: genId(), date: new Date().toISOString(), desc: `Quick deposit $${formatUSD(amt)} to ${acc}`, account:acc });
+      saveData();
+    }
+    function quickWithdraw(acc, amt){
+      if (data[acc].balance < amt){ alert("Insufficient funds."); return; }
+      data[acc].balance = Number(data[acc].balance) - Number(amt);
+      data.transactions.unshift({ id: genId(), date: new Date().toISOString(), desc: `Quick withdrawal $${formatUSD(amt)} from ${acc}`, account:acc });
+      saveData();
+    }
+
+    /* ---------------------------
+       Logo upload & clear
+       --------------------------- */
+    document.getElementById("logoFile").addEventListener("change", function(e){
+      const f = e.target.files && e.target.files[0];
+      if (!f) return;
+      const reader = new FileReader();
+      reader.onload = function(ev){
+        try {
+          data.logoDataUrl = ev.target.result;
+          saveJson(STORAGE_DATA, data);
+          // update headers live
+          logoHeader.style.backgroundImage = `url(${data.logoDataUrl})`; logoHeader.style.backgroundSize = "cover"; logoHeader.textContent='';
+          document.getElementById("logoPreview").style.backgroundImage = `url(${data.logoDataUrl})`; document.getElementById("logoPreview").textContent='';
+          alert("Logo uploaded and saved to your browser.");
+        } catch(err) { alert("Could not save logo to localStorage (maybe file too large)."); }
+      };
+      reader.readAsDataURL(f);
+    });
+
+    function clearLogo(){
+      data.logoDataUrl = null;
+      saveJson(STORAGE_DATA, data);
+      logoHeader.style.backgroundImage = ''; logoHeader.textContent='DW';
+      document.getElementById("logoPreview").style.backgroundImage=''; document.getElementById("logoPreview").textContent='DW';
+    }
+
+    /* ---------------------------
+       Export CSV
+       --------------------------- */
+    function exportCSV(){
+      const rows = [["date","account","description"]];
+      data.transactions.slice().reverse().forEach(t=>{
+        rows.push([t.date, t.account, t.desc]);
+      });
+      const csv = rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(",")).join("\n");
+      const blob = new Blob([csv], {type:'text/csv'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = "transactions.csv"; a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    /* ---------------------------
+       Reset / clear / utils
+       --------------------------- */
+    function resetDemo(){
+      if (!confirm("Reset demo data to original balances & transactions? This will overwrite current data.")) return;
+      data = JSON.parse(JSON.stringify(demoData));
+      saveJson(STORAGE_DATA, data);
+      render();
+      alert("Demo reset.");
+    }
+
+    function clearAll(){
+      if (!confirm("Clear ALL demo data (accounts/transactions/credentials/logo) from your browser?")) return;
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(STORAGE_DATA);
+      auth = defaultUser;
+      data = demoData;
+      saveJson(STORAGE_KEY, auth); saveJson(STORAGE_DATA, data);
+      alert("All demo data cleared. Page will refresh.");
+      location.reload();
+    }
+
+    /* ---------------------------
+       Small helpers
+       --------------------------- */
+    function saveJson(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){ console.warn("save failed",e); } }
+    function loadJson(k){ try { const r = localStorage.getItem(k); return r ? JSON.parse(r) : null; } catch(e){ return null; } }
+    function saveData(){ data.lastUpdated = new Date().toISOString(); saveJson(STORAGE_DATA,data); render(); }
+    function genId(){ return 'tx_' + Math.random().toString(36).slice(2,9); }
+
+    // login shortcut: if user already "logged in" in this session (you can extend)
+    // For demo we show the login first. Uncomment to auto-login for quick demo:
+    // currentUser = auth.username; showMain();
+
+    // when page first loads, ensure UI elements reflect data
+    // If user wants auto login, set currentUser and call showMain()
+    // For now show login screen (but you can click create/reset to use defaults)
+    showLogin();
+
+    // If the user logs in using default credentials, they will immediately see the main UI & data.
+
+    /* PWA install hint (optional) */
+    if ('serviceWorker' in navigator) {
+      // try register a service worker if manifest & sw file present (fail silently)
+      navigator.serviceWorker.register('sw.js').catch(()=>{});
+    }
+  </script>
+</body>
+</html>
